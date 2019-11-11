@@ -1,0 +1,44 @@
+package com.github.bderancourt.springboot.isolatedrunner;
+
+import java.net.URL;
+import java.util.Arrays;
+import java.util.StringJoiner;
+
+import org.apache.commons.io.FileUtils;
+import org.springframework.boot.loader.archive.JarFileArchive;
+
+import com.github.bderancourt.springboot.isolatedrunner.technicaltuff.ClassPathUtils;
+import com.github.bderancourt.springboot.isolatedrunner.technicaltuff.DirDependency;
+import com.github.bderancourt.springboot.isolatedrunner.technicaltuff.JarDependency;
+
+public class SpringBootIsolatedRunner {
+
+  private URL dependencyUrl;
+
+  private String name;
+
+  private String mainClass;
+
+  public SpringBootIsolatedRunner(String mainClass, String... dependencyInfos) {
+    dependencyUrl = ClassPathUtils.findDependencyURL(dependencyInfos);
+    this.mainClass = mainClass;
+    StringJoiner stringJoiner = new StringJoiner("-");
+    Arrays.asList(dependencyInfos)
+        .stream()
+        .forEach(stringJoiner::add);
+    name = stringJoiner.toString();
+  }
+
+  public void start(String[] args) throws Exception {
+
+    if (dependencyUrl.getFile()
+        .endsWith("/")) {
+      new DirDependency(dependencyUrl, name, mainClass).start(args);
+
+    } else {
+      JarFileArchive springBootJar = new JarFileArchive(FileUtils.toFile(dependencyUrl));
+      new JarDependency(springBootJar, name).start(args);
+    }
+  }
+
+}
