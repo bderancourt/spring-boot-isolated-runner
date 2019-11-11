@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.bderancourt</groupId>
   <artifactId>spring-boot-isolated-runner</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2-SNAPSHOT</version>
 
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Run multiple spring-boot applications each in its own class loader and thread</description>
@@ -119,6 +119,9 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <shadedClassifierName></shadedClassifierName>
+              <shadeSourcesContent>true</shadeSourcesContent>
+              <createSourcesJar>true</createSourcesJar>
               <minimizeJar>true</minimizeJar>
               <artifactSet>
                 <includes>
@@ -129,18 +132,14 @@
               </artifactSet>
               <relocations>
                 <relocation>
-                  <pattern>org.apache.commons.io</pattern>
-                  <shadedPattern>shaded.org.apache.commons.io</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.apache.commons.lang3</pattern>
-                  <shadedPattern>shaded.org.apache.commons.lang3</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.springframework.boot.loader</pattern>
-                  <shadedPattern>shaded.org.springframework.boot.loader</shadedPattern>
+                  <pattern>org.</pattern>
+                  <shadedPattern>shaded.org.</shadedPattern>
                 </relocation>
               </relocations>
+              <transformers>
+                <transformer
+                  implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
+              </transformers>
             </configuration>
           </execution>
         </executions>
@@ -180,26 +179,26 @@
     <profile>
       <id>release</id>
       <build>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-gpg-plugin</artifactId>
-          <version>1.6</version>
-          <executions>
-            <execution>
-              <id>sign-artifacts</id>
-              <phase>verify</phase>
-              <goals>
-                <goal>sign</goal>
-              </goals>
-            </execution>
-          </executions>
-          <configuration>
-            <keyname>${gpg.keyname}</keyname>
-            <passphraseServerId>${gpg.keyname}</passphraseServerId>
-          </configuration>
-        </plugin>
-      </plugins>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <keyname>${gpg.keyname}</keyname>
+              <passphraseServerId>${gpg.keyname}</passphraseServerId>
+            </configuration>
+          </plugin>
+        </plugins>
       </build>
     </profile>
   </profiles>
