@@ -1,4 +1,4 @@
-package com.github.bderancourt.springboot.isolatedrunner.technicaltuff;
+package com.github.bderancourt.springboot.isolatedrunner.util;
 
 import java.net.URL;
 import java.net.URLClassLoader;

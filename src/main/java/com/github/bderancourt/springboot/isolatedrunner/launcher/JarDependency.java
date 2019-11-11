@@ -1,4 +1,4 @@
-package com.github.bderancourt.springboot.isolatedrunner.technicaltuff;
+package com.github.bderancourt.springboot.isolatedrunner.launcher;
 
 import java.net.URL;
 import java.util.List;
@@ -9,17 +9,22 @@ import org.springframework.boot.loader.LaunchedURLClassLoader;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.jar.JarFile;
 
+import com.github.bderancourt.springboot.isolatedrunner.util.ClassPathUtils;
+
 public class JarDependency extends JarLauncher implements Dependency {
 
   private String name;
+
+  private String mainClass;
 
   private Class<?> runnerClass;
 
   private Object runnerInstance;
 
-  public JarDependency(Archive archive, String name) {
+  public JarDependency(Archive archive, String name, String mainClass) {
     super(archive);
     this.name = name;
+    this.mainClass = mainClass;
   }
 
   /**
@@ -38,14 +43,7 @@ public class JarDependency extends JarLauncher implements Dependency {
     ClassLoader classLoader = createClassLoader(archives);
 
     runnerClass = classLoader.loadClass(RUNNER_CLASS);
-    Class<?> configClass = classLoader.loadClass(getMainClass());
-
-    // hack
-    // https://stackoverflow.com/questions/28911560/tomcat-8-embedded-error-org-apache-catalina-core-containerbase-a-child-con
-    Class<?> tomcatURLStreamHandlerFactoryClass = classLoader
-        .loadClass("org.apache.catalina.webresources.TomcatURLStreamHandlerFactory");
-    tomcatURLStreamHandlerFactoryClass.getDeclaredMethod("disable")
-        .invoke(null, (Object[]) null);
+    Class<?> configClass = classLoader.loadClass(mainClass);
 
     Object runner = runnerClass.getDeclaredConstructor(Class.class, String[].class, String.class)
         .newInstance(configClass, args, name);

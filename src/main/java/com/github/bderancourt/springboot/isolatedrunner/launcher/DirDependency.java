@@ -1,4 +1,4 @@
-package com.github.bderancourt.springboot.isolatedrunner.technicaltuff;
+package com.github.bderancourt.springboot.isolatedrunner.launcher;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 
 import org.springframework.boot.loader.LaunchedURLClassLoader;
 import org.springframework.boot.loader.jar.JarFile;
+
+import com.github.bderancourt.springboot.isolatedrunner.util.ClassPathUtils;
 
 public class DirDependency implements Dependency {
 
@@ -63,13 +65,6 @@ public class DirDependency implements Dependency {
     runnerClass = classLoader.loadClass(RUNNER_CLASS);
     Class<?> configClass = classLoader.loadClass(mainClass);
 
-    // hack
-    // https://stackoverflow.com/questions/28911560/tomcat-8-embedded-error-org-apache-catalina-core-containerbase-a-child-con
-    Class<?> tomcatURLStreamHandlerFactoryClass = classLoader
-        .loadClass("org.apache.catalina.webresources.TomcatURLStreamHandlerFactory");
-    tomcatURLStreamHandlerFactoryClass.getDeclaredMethod("disable")
-        .invoke(null, (Object[]) null);
-
     Object runner = runnerClass.getDeclaredConstructor(Class.class, String[].class, String.class)
         .newInstance(configClass, args, name);
     runnerClass.getMethod("run")
@@ -112,6 +107,7 @@ public class DirDependency implements Dependency {
 
     urls.add(ClassPathUtils.findDependencyURL("spring-boot-isolated-runner"));
     urls.add(ClassPathUtils.findDependencyURL("org/springframework/boot/spring-boot/"));
+    urls.add(ClassPathUtils.findDependencyURL("org/springframework/boot/spring-boot-loader/"));
 
     // In this list, we store all this JVM classpath.
     List<URL> classPathUrls = new ArrayList<>();

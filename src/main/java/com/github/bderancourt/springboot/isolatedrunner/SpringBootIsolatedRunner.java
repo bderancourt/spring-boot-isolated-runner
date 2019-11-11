@@ -7,9 +7,9 @@ import java.util.StringJoiner;
 import org.apache.commons.io.FileUtils;
 import org.springframework.boot.loader.archive.JarFileArchive;
 
-import com.github.bderancourt.springboot.isolatedrunner.technicaltuff.ClassPathUtils;
-import com.github.bderancourt.springboot.isolatedrunner.technicaltuff.DirDependency;
-import com.github.bderancourt.springboot.isolatedrunner.technicaltuff.JarDependency;
+import com.github.bderancourt.springboot.isolatedrunner.launcher.DirDependency;
+import com.github.bderancourt.springboot.isolatedrunner.launcher.JarDependency;
+import com.github.bderancourt.springboot.isolatedrunner.util.ClassPathUtils;
 
 public class SpringBootIsolatedRunner {
 
@@ -37,7 +37,7 @@ public class SpringBootIsolatedRunner {
 
     } else {
       JarFileArchive springBootJar = new JarFileArchive(FileUtils.toFile(dependencyUrl));
-      new JarDependency(springBootJar, name).start(args);
+      new JarDependency(springBootJar, name, mainClass).start(args);
     }
   }
 

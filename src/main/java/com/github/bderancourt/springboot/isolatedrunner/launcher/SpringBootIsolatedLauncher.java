@@ -1,4 +1,4 @@
-package com.github.bderancourt.springboot.isolatedrunner.technicaltuff;
+package com.github.bderancourt.springboot.isolatedrunner.launcher;
 
 import java.lang.reflect.Method;
 
@@ -6,7 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 
-public class IsolatedSpringBootLauncher {
+public class SpringBootIsolatedLauncher {
 
   private ApplicationContext context;
 
@@ -18,7 +18,7 @@ public class IsolatedSpringBootLauncher {
 
   private boolean shouldWait;
 
-  public IsolatedSpringBootLauncher(Class<?> applicationClass, String[] args, String name) {
+  public SpringBootIsolatedLauncher(Class<?> applicationClass, String[] args, String name) {
     this.applicationClass = applicationClass;
     this.args = args;
     this.name = name;
