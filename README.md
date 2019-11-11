@@ -6,3 +6,12 @@ Run multiple spring-boot applications each in its own class loader and thread
 ## License
 
 See [LICENSE](LICENSE).
+
+## Usage
+
+To start your spring-boot app:
+
+    SpringBootIsolatedRunner runner = new SpringBootIsolatedRunner(SPRING_BOOT_CONFIGURATION_CLASS,
+            "infos to find your", "springboot-boot-app", "in the classpath");
+    runner.start(new String[] {"server.port=8080"});
+
