@@ -5,6 +5,31 @@
   <artifactId>spring-boot-isolated-runner</artifactId>
   <version>0.0.1-SNAPSHOT</version>
 
+  <name>${project.groupId}:${project.artifactId}</name>
+  <description>Run multiple spring-boot applications each in its own class loader and thread</description>
+  <url>https://github.com/bderancourt/spring-boot-isolated-runner</url>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Benoit de Rancourt</name>
+      <organization>github user</organization>
+      <organizationUrl>https://github.com/bderancourt</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/bderancourt/spring-boot-isolated-runner.git</connection>
+    <developerConnection>scm:git:git://github.com/bderancourt/spring-boot-isolated-runner.git</developerConnection>
+    <url>https://github.com/bderancourt/spring-boot-isolated-runner/tree/master</url>
+  </scm>
+
   <properties>
     <java.version>1.8</java.version>
     <maven.compiler.source>1.8</maven.compiler.source>
