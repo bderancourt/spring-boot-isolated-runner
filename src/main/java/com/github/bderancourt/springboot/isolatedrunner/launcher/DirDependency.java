@@ -40,8 +40,9 @@ public class DirDependency implements Dependency {
 
   /**
    * @param args
-   * @param propertiesToAdd
+   *          to pass to the spring-boot app
    * @throws Exception
+   *           if an error occurs during the spring-boot app startup
    */
   public void start(String[] args) throws Exception {
 
@@ -94,7 +95,9 @@ public class DirDependency implements Dependency {
    * which URL on this application classpath (JVM) is relevant.
    * 
    * @param manifestClassPath
+   *          the list of jars defined in the Class-Path key of the manifest
    * @param classPathDependencyUrl
+   *          the URL to the spring boot app to run
    * @return spring-boot app classpath
    */
   protected URL[] constructClassPath(String manifestClassPath, URL classPathDependencyUrl) {
@@ -125,7 +128,7 @@ public class DirDependency implements Dependency {
         String jar = it.next();
         if (url.getFile()
             .contains(jar)) {
-          //System.out.println("adding url " + url + " matching " + jar);
+          // System.out.println("adding url " + url + " matching " + jar);
           urls.add(url);
           it.remove();
           itUrls.remove();
@@ -151,7 +154,7 @@ public class DirDependency implements Dependency {
           Pattern urlPattern = Pattern.compile(urlRegex);
           if (urlPattern.matcher(url.getFile())
               .find()) {
-            //System.out.println("adding url " + url + " matching " + jar);
+            // System.out.println("adding url " + url + " matching " + jar);
             urls.add(url);
             it.remove();
             itUrls.remove();
@@ -175,7 +178,7 @@ public class DirDependency implements Dependency {
               .stream()
               .allMatch(word -> url.getFile()
                   .contains(word))) {
-            //System.out.println("adding url " + url + " matching " + jar);
+            // System.out.println("adding url " + url + " matching " + jar);
             urls.add(url);
             it.remove();
             itUrls.remove();

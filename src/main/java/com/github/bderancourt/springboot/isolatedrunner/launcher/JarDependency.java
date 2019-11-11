@@ -29,8 +29,9 @@ public class JarDependency extends JarLauncher implements Dependency {
 
   /**
    * @param args
-   * @param propertiesToAdd
+   *          to pass to the spring-boot app
    * @throws Exception
+   *           if an error occurs during the spring-boot app startup
    */
   public void start(String[] args) throws Exception {
 
