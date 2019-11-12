@@ -69,7 +69,8 @@ public class JarDependency extends JarLauncher implements Dependency {
   @Override
   protected ClassLoader createClassLoader(URL[] urls) throws Exception {
 
-    URL[] urlsToAdd = new URL[] { ClassPathUtils.findDependencyURL("spring-boot-isolated-runner"),
+    URL[] urlsToAdd = new URL[] { 
+        ClassPathUtils.findDependencyURL("spring-boot-isolated-runner"),
         ClassPathUtils.findDependencyURL("org/springframework/boot/spring-boot/") };
 
     URL[] totalUrls = ArrayUtils.addAll(urls, urlsToAdd);

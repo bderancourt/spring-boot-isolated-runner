@@ -110,7 +110,6 @@ public class DirDependency implements Dependency {
 
     urls.add(ClassPathUtils.findDependencyURL("spring-boot-isolated-runner"));
     urls.add(ClassPathUtils.findDependencyURL("org/springframework/boot/spring-boot/"));
-    urls.add(ClassPathUtils.findDependencyURL("org/springframework/boot/spring-boot-loader/"));
 
     // In this list, we store all this JVM classpath.
     List<URL> classPathUrls = new ArrayList<>();
