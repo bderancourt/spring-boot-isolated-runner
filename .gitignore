@@ -32,3 +32,6 @@ hs_err_pid*
 
 # maven shade plugin
 dependency-reduced-pom.xml
+
+# mergetool
+*.orig
