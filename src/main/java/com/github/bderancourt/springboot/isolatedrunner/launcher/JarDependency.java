@@ -13,6 +13,8 @@ import com.github.bderancourt.springboot.isolatedrunner.util.ClassPathUtils;
 
 public class JarDependency extends JarLauncher implements Dependency {
 
+  private List<URL> classpath;
+
   private String name;
 
   private String mainClass;
@@ -21,8 +23,9 @@ public class JarDependency extends JarLauncher implements Dependency {
 
   private Object runnerInstance;
 
-  public JarDependency(Archive archive, String name, String mainClass) {
+  public JarDependency(List<URL> classpath, Archive archive, String name, String mainClass) {
     super(archive);
+    this.classpath = classpath;
     this.name = name;
     this.mainClass = mainClass;
   }
@@ -37,8 +40,7 @@ public class JarDependency extends JarLauncher implements Dependency {
 
     List<Archive> archives = getClassPathArchives();
     System.out.println("Loaded classpath for " + name);
-    archives.stream()
-        .forEach(System.out::println);
+    archives.stream().forEach(System.out::println);
 
     JarFile.registerUrlProtocolHandler();
     ClassLoader classLoader = createClassLoader(archives);
@@ -48,8 +50,7 @@ public class JarDependency extends JarLauncher implements Dependency {
 
     Object runner = runnerClass.getDeclaredConstructor(Class.class, String[].class, String.class)
         .newInstance(configClass, args, name);
-    runnerClass.getMethod("run")
-        .invoke(runner);
+    runnerClass.getMethod("run").invoke(runner);
   }
 
   public void stop() throws Exception {
@@ -70,8 +71,8 @@ public class JarDependency extends JarLauncher implements Dependency {
   protected ClassLoader createClassLoader(URL[] urls) throws Exception {
 
     URL[] urlsToAdd = new URL[] { 
-        ClassPathUtils.findDependencyURL("spring-boot-isolated-runner"),
-        ClassPathUtils.findDependencyURL("org/springframework/boot/spring-boot/") };
+        ClassPathUtils.findDependencyURL(classpath, "spring-boot-isolated-runner"),
+        ClassPathUtils.findDependencyURL(classpath, "org/springframework/boot/spring-boot/") };
 
     URL[] totalUrls = ArrayUtils.addAll(urls, urlsToAdd);
 

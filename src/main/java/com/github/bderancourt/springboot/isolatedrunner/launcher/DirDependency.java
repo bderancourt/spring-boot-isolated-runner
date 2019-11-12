@@ -54,9 +54,9 @@ public class DirDependency implements Dependency {
     }
 
     URL[] classPathUrls = constructClassPath(manifest.getMainAttributes()
-        .getValue("Class-Path"), classPathDependencyUrl);
+        .getValue(MANIFEST_CLASSPATH), classPathDependencyUrl);
 
-    System.out.println("Loaded classpath for " + name);
+    System.out.println("Loaded isolated classpath for " + name);
     Arrays.stream(classPathUrls)
         .forEach(System.out::println);
 
@@ -100,7 +100,7 @@ public class DirDependency implements Dependency {
    *          the URL to the spring boot app to run
    * @return spring-boot app classpath
    */
-  protected URL[] constructClassPath(String manifestClassPath, URL classPathDependencyUrl) {
+  protected URL[] constructClassPath(String manifestClassPath, URL classPathDependencyUrl) throws Exception {
     URLClassLoader systemClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
 
     List<URL> urls = new ArrayList<>();
@@ -138,7 +138,7 @@ public class DirDependency implements Dependency {
     // Second try. For dependency management reasons, we potentially have jars in the manifest
     // that are not exactly on the same version as in the program classpath URLs.
     // Initialize regex pattern
-    Pattern jarWithVersionPattern = Pattern.compile("(.+(?=\\-\\d))(.+(?=\\.jar))(\\.jar)");
+    Pattern jarWithVersionPattern = Pattern.compile("(.+(?=\\-\\d))\\-(.+(?=\\.jar))(\\.jar)");
 
     for (ListIterator<URL> itUrls = classPathUrls.listIterator(); itUrls.hasNext();) {
       URL url = itUrls.next();
@@ -147,14 +147,19 @@ public class DirDependency implements Dependency {
 
         Matcher matcher = jarWithVersionPattern.matcher(jar);
         if (matcher.find()) {
-          String urlRegex = matcher.replaceFirst("$1[^/]*$3")
+          String urlRegex = matcher.replaceFirst("$1-([^/]*)$3")
               .replace("-", "\\-")
               .replace(".", "\\.");
+          String exactVersion = matcher.replaceFirst("$2");
           Pattern urlPattern = Pattern.compile(urlRegex);
-          if (urlPattern.matcher(url.getFile())
-              .find()) {
-            // System.out.println("adding url " + url + " matching " + jar);
-            urls.add(url);
+          Matcher urlMatcher = urlPattern.matcher(url.getFile());
+          if (urlMatcher.find()) {
+            String notExactVersion = urlMatcher.group(1);
+            System.err.println("classpath url " + url + " matches " + jar + " but version " + notExactVersion
+                + " will be replaced by " + exactVersion + " to conform to the app classpath");
+            URL modifiedUrl = new URL(url.toString().replace(notExactVersion, exactVersion));
+            //System.out.println("adding url " + modifiedUrl);
+            urls.add(modifiedUrl);
             it.remove();
             itUrls.remove();
           }

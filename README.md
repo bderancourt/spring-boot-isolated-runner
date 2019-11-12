@@ -3,9 +3,6 @@
 Run multiple spring-boot applications each in its own class loader and thread
 
 [![Build Status](https://travis-ci.com/bderancourt/spring-boot-isolated-runner.svg?branch=master)](https://travis-ci.com/bderancourt/spring-boot-isolated-runner)
-## License
-
-See [LICENSE](LICENSE).
 
 ## Usage
 
@@ -15,3 +12,7 @@ To start your spring-boot app:
             "infos to find your", "springboot-boot-app", "in the classpath");
     runner.start(new String[] {"server.port=8080"});
 
+
+## License
+
+See [LICENSE](LICENSE).
