@@ -132,8 +132,12 @@
               </artifactSet>
               <relocations>
                 <relocation>
-                  <pattern>org.</pattern>
-                  <shadedPattern>shaded.org.</shadedPattern>
+                  <pattern>org.apache.commons.</pattern>
+                  <shadedPattern>shaded.org.apache.commons.</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.springframework.boot.loader</pattern>
+                  <shadedPattern>shaded.org.springframework.boot.loader</shadedPattern>
                 </relocation>
               </relocations>
               <transformers>
