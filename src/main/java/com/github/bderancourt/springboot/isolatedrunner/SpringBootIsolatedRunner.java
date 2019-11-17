@@ -1,11 +1,15 @@
 package com.github.bderancourt.springboot.isolatedrunner;
 
-import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.StringJoiner;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.boot.loader.archive.JarFileArchive;
 
@@ -13,6 +17,8 @@ import com.github.bderancourt.springboot.isolatedrunner.launcher.Dependency;
 import com.github.bderancourt.springboot.isolatedrunner.launcher.DirDependency;
 import com.github.bderancourt.springboot.isolatedrunner.launcher.JarDependency;
 import com.github.bderancourt.springboot.isolatedrunner.util.ClassPathUtils;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * The class you need to use to start your spring-boot apps each in an isolated classpath and thread
@@ -47,11 +53,19 @@ public class SpringBootIsolatedRunner {
    */
   public void start(String[] args) throws Exception {
     // Firstly, print current program classpath
-    log.info("##### Current classpath #####");
-    Arrays.asList(((URLClassLoader)ClassLoader.getSystemClassLoader()).getURLs()).stream()
-            .map(Objects::toString)
-            .forEach(log::debug);
-    log.info("##### Current classpath #####");
+    log.debug("##### Current classpath #####");
+    Arrays.asList(((URLClassLoader) ClassLoader.getSystemClassLoader()).getURLs())
+        .stream()
+        .map(Objects::toString)
+        .forEach(log::debug);
+    log.debug("##### Current classpath #####");
+
+    // and print some useful informations
+    log.debug("current path with user.dir system property is: {}", System.getProperty("user.dir"));
+    log.debug("current path with Paths.get(\".\") is: {}", Paths.get(".")
+        .toAbsolutePath()
+        .normalize()
+        .toString());
 
     URL dependencyUrl;
     List<URL> classpath = null;
@@ -74,20 +88,29 @@ public class SpringBootIsolatedRunner {
             .getValue(Dependency.MANIFEST_CLASSPATH);
       }
 
+      // deducting surefire current dir from surefire jar URL
+      Path surefireDir = Paths.get(surefire.toURI())
+          .getParent();
+      log.debug("surefire jar path: {}", surefireDir);
+
       // In this list, we store the jars found in the spring-boot app manifest.
       classpath = new ArrayList<>();
       for (String jar : surefireManifestClassPath.split(" ")) {
-        URL url = new File(jar).toURI().toURL();
+        URL url = Paths.get(surefireDir.toString(), jar)
+            .toFile()
+            .getCanonicalFile()
+            .toURI()
+            .toURL();
         classpath.add(url);
       }
       log.info("##### Surefire override classpath #####");
       classpath.stream()
-              .map(Objects::toString)
-              .forEach(log::debug);
+          .map(Objects::toString)
+          .forEach(log::debug);
       log.info("##### Surefire override classpath #####");
       dependencyUrl = ClassPathUtils.findDependencyURL(classpath, dependencyInfos);
 
-    // not in surefire mode
+      // not in surefire mode
     } else {
       dependencyUrl = ClassPathUtils.findDependencyURL(dependencyInfos);
       classpath = Arrays.asList(((URLClassLoader) ClassLoader.getSystemClassLoader()).getURLs());
