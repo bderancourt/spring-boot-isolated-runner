@@ -2,6 +2,7 @@ package com.github.bderancourt.springboot.isolatedrunner.launcher;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.boot.loader.JarLauncher;
@@ -11,6 +12,9 @@ import org.springframework.boot.loader.jar.JarFile;
 
 import com.github.bderancourt.springboot.isolatedrunner.util.ClassPathUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class JarDependency extends JarLauncher implements Dependency {
 
   private List<URL> classpath;
@@ -39,8 +43,8 @@ public class JarDependency extends JarLauncher implements Dependency {
   public void start(String[] args) throws Exception {
 
     List<Archive> archives = getClassPathArchives();
-    System.out.println("Loaded classpath for " + name);
-    archives.stream().forEach(System.out::println);
+    log.debug("Loaded classpath for {}", name);
+    archives.stream().map(Objects::toString).forEach(log::debug);
 
     JarFile.registerUrlProtocolHandler();
     ClassLoader classLoader = createClassLoader(archives);

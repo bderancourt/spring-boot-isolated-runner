@@ -11,15 +11,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.loader.LaunchedURLClassLoader;
 import org.springframework.boot.loader.jar.JarFile;
 
 import com.github.bderancourt.springboot.isolatedrunner.util.ClassPathUtils;
 
+@Slf4j
 public class DirDependency implements Dependency {
 
   private URL classPathDependencyUrl;
@@ -56,9 +59,10 @@ public class DirDependency implements Dependency {
     URL[] classPathUrls = constructClassPath(manifest.getMainAttributes()
         .getValue(MANIFEST_CLASSPATH), classPathDependencyUrl);
 
-    System.out.println("Loaded isolated classpath for " + name);
+    log.debug("Loaded isolated classpath for " + name);
     Arrays.stream(classPathUrls)
-        .forEach(System.out::println);
+        .map(Objects::toString)
+        .forEach(log::debug);
 
     JarFile.registerUrlProtocolHandler();
     ClassLoader classLoader = createClassLoader(classPathUrls);
@@ -99,6 +103,8 @@ public class DirDependency implements Dependency {
    * @param classPathDependencyUrl
    *          the URL to the spring boot app to run
    * @return spring-boot app classpath
+   * @throws Exception
+   *           if an URL don't exists
    */
   protected URL[] constructClassPath(String manifestClassPath, URL classPathDependencyUrl) throws Exception {
     URLClassLoader systemClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
@@ -127,7 +133,7 @@ public class DirDependency implements Dependency {
         String jar = it.next();
         if (url.getFile()
             .contains(jar)) {
-          // System.out.println("adding url " + url + " matching " + jar);
+          log.debug("adding url {} matching {}", url, jar);
           urls.add(url);
           it.remove();
           itUrls.remove();
@@ -155,10 +161,12 @@ public class DirDependency implements Dependency {
           Matcher urlMatcher = urlPattern.matcher(url.getFile());
           if (urlMatcher.find()) {
             String notExactVersion = urlMatcher.group(1);
-            System.err.println("classpath url " + url + " matches " + jar + " but version " + notExactVersion
-                + " will be replaced by " + exactVersion + " to conform to the app classpath");
-            URL modifiedUrl = new URL(url.toString().replace(notExactVersion, exactVersion));
-            //System.out.println("adding url " + modifiedUrl);
+            log.info(
+                "classpath url {} matches {} but version {} will be replaced by {} to conform to the app classpath",
+                url, jar, notExactVersion, exactVersion);
+            URL modifiedUrl = new URL(url.toString()
+                .replace(notExactVersion, exactVersion));
+            log.debug("adding url {}", modifiedUrl);
             urls.add(modifiedUrl);
             it.remove();
             itUrls.remove();
@@ -182,7 +190,7 @@ public class DirDependency implements Dependency {
               .stream()
               .allMatch(word -> url.getFile()
                   .contains(word))) {
-            // System.out.println("adding url " + url + " matching " + jar);
+            log.debug("adding url {} matching {}", url, jar);
             urls.add(url);
             it.remove();
             itUrls.remove();

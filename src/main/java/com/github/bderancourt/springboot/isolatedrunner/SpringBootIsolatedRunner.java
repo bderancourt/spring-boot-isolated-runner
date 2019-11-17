@@ -3,11 +3,9 @@ package com.github.bderancourt.springboot.isolatedrunner;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.StringJoiner;
+import java.util.*;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.boot.loader.archive.JarFileArchive;
 
@@ -21,6 +19,7 @@ import com.github.bderancourt.springboot.isolatedrunner.util.ClassPathUtils;
  * 
  * @author bderancourt
  */
+@Slf4j
 public class SpringBootIsolatedRunner {
 
   String[] dependencyInfos;
@@ -47,6 +46,13 @@ public class SpringBootIsolatedRunner {
    *           hmm, problem !
    */
   public void start(String[] args) throws Exception {
+    // Firstly, print current program classpath
+    log.info("##### Current classpath #####");
+    Arrays.asList(((URLClassLoader)ClassLoader.getSystemClassLoader()).getURLs()).stream()
+            .map(Objects::toString)
+            .forEach(log::debug);
+    log.info("##### Current classpath #####");
+
     URL dependencyUrl;
     List<URL> classpath = null;
 
@@ -55,7 +61,7 @@ public class SpringBootIsolatedRunner {
     URL surefire = null;
     try {
       surefire = ClassPathUtils.findDependencyURL("surefire", "surefirebooter", "jar");
-      System.out.println("surefirebooter.jar found " + surefire.toString());
+      log.info("surefirebooter.jar found " + surefire.toString());
     } catch (IllegalArgumentException e) {
     }
 
@@ -71,10 +77,14 @@ public class SpringBootIsolatedRunner {
       // In this list, we store the jars found in the spring-boot app manifest.
       classpath = new ArrayList<>();
       for (String jar : surefireManifestClassPath.split(" ")) {
-        URL url = new File(new File(".", jar).getCanonicalPath()).toURI()
-            .toURL();
+        URL url = new File(jar).toURI().toURL();
         classpath.add(url);
       }
+      log.info("##### Surefire override classpath #####");
+      classpath.stream()
+              .map(Objects::toString)
+              .forEach(log::debug);
+      log.info("##### Surefire override classpath #####");
       dependencyUrl = ClassPathUtils.findDependencyURL(classpath, dependencyInfos);
 
     // not in surefire mode
@@ -82,7 +92,7 @@ public class SpringBootIsolatedRunner {
       dependencyUrl = ClassPathUtils.findDependencyURL(dependencyInfos);
       classpath = Arrays.asList(((URLClassLoader) ClassLoader.getSystemClassLoader()).getURLs());
     }
-    System.out.println("dependencyUrl found " + dependencyUrl.toString());
+    log.info("dependencyUrl found " + dependencyUrl.toString());
 
     StringJoiner stringJoiner = new StringJoiner("-");
     Arrays.asList(dependencyInfos)
