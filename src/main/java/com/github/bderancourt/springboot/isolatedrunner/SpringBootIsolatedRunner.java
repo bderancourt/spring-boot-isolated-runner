@@ -54,18 +54,11 @@ public class SpringBootIsolatedRunner {
   public void start(String[] args) throws Exception {
     // Firstly, print current program classpath
     log.debug("##### Current classpath #####");
-    Arrays.asList(((URLClassLoader) ClassLoader.getSystemClassLoader()).getURLs())
+    Arrays.asList(((URLClassLoader) Thread.currentThread().getContextClassLoader()).getURLs())
         .stream()
         .map(Objects::toString)
         .forEach(log::debug);
     log.debug("##### Current classpath #####");
-
-    // and print some useful informations
-    log.debug("current path with user.dir system property is: {}", System.getProperty("user.dir"));
-    log.debug("current path with Paths.get(\".\") is: {}", Paths.get(".")
-        .toAbsolutePath()
-        .normalize()
-        .toString());
 
     URL dependencyUrl;
     List<URL> classpath = null;

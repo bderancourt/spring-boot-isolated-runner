@@ -18,6 +18,9 @@ import org.springframework.util.Assert;
 
 public class ClassPathUtils {
 
+  private ClassPathUtils() {
+  };
+
   /**
    * Find URL in the current program classpath based on the dependency infos passed in args.<br>
    * For example: findDependencyURL("mycompany", "my-spring-boot-app")<br>
@@ -28,7 +31,8 @@ public class ClassPathUtils {
    * @return the dependency URL
    */
   public static URL findDependencyURL(String... dependencyInfos) {
-    URLClassLoader systemClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+    URLClassLoader systemClassLoader = (URLClassLoader) Thread.currentThread()
+        .getContextClassLoader();
     return findDependencyURL(Arrays.asList(systemClassLoader.getURLs()), dependencyInfos);
   }
 
@@ -79,8 +83,10 @@ public class ClassPathUtils {
    * if there are more than one URL found, we take those having the best "score". e.g. those contains dependencyInfo
    * more than one Visible for testing
    * 
-   * @param urls to scan
-   * @param dependencyInfos to calculate max score
+   * @param urls
+   *          to scan
+   * @param dependencyInfos
+   *          to calculate max score
    * @return URL if only one matches the max score, empty otherwise
    */
   protected static Optional<URL> findMaxScore(List<URL> urls, String... dependencyInfos) {
