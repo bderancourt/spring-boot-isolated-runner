@@ -2,28 +2,40 @@ package com.github.bderancourt.springboot.isolatedrunner.launcher;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.springframework.boot.loader.LaunchedURLClassLoader;
 import org.springframework.boot.loader.jar.JarFile;
 
 import com.github.bderancourt.springboot.isolatedrunner.util.ClassPathUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 public class DirDependency implements Dependency {
+
+  private static final Pattern JAR_WITH_VERSION_PATTERN = Pattern.compile("(.+(?=\\-\\d))\\-(.+(?=\\.jar))(\\.jar)");
 
   private URL classPathDependencyUrl;
 
@@ -122,74 +134,18 @@ public class DirDependency implements Dependency {
     classPathUrls.addAll(Arrays.asList(systemClassLoader.getURLs()));
 
     // In this list, we store the jars found in the spring-boot app manifest.
-    List<String> manifestJars = new ArrayList<>();
+    List<String> manifestJars = Collections.synchronizedList(new ArrayList<>());
     manifestJars.addAll(Arrays.asList(manifestClassPath.split(" ")));
 
     // First try, find the exact matching between the jar and the program classpath URL
     // Ex: file:/C:/m2repo/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar matching jsr305-3.0.2.jar
-    for (ListIterator<URL> itUrls = classPathUrls.listIterator(); itUrls.hasNext();) {
-      URL url = itUrls.next();
-      for (ListIterator<String> it = manifestJars.listIterator(); it.hasNext();) {
-        String jar = it.next();
-        if (url.getFile()
-            .contains(jar)) {
-          log.debug("adding url {} matching {}", url, jar);
-          urls.add(url);
-          it.remove();
-          itUrls.remove();
-        }
-      }
-    }
-
-    // Second try. For dependency management reasons, we potentially have jars in the manifest
-    // that are not exactly on the same version as in the program classpath URLs.
-    // Initialize regex pattern
-    Pattern jarWithVersionPattern = Pattern.compile("(.+(?=\\-\\d))\\-(.+(?=\\.jar))(\\.jar)");
-
-    for (ListIterator<URL> itUrls = classPathUrls.listIterator(); itUrls.hasNext();) {
-      URL url = itUrls.next();
-      for (ListIterator<String> it = manifestJars.listIterator(); it.hasNext();) {
-        String jar = it.next();
-
-        Matcher matcher = jarWithVersionPattern.matcher(jar);
-        if (matcher.find()) {
-          String urlRegex = matcher.replaceFirst("$1-([^/]*)$3")
-              .replace("-", "\\-")
-              .replace(".", "\\.");
-          String exactVersion = matcher.replaceFirst("$2");
-          Pattern urlPattern = Pattern.compile(urlRegex);
-          Matcher urlMatcher = urlPattern.matcher(url.getFile());
-          if (urlMatcher.find()) {
-            String notExactVersion = urlMatcher.group(1);
-            log.info(
-                "classpath url {} matches {} but version {} will be replaced by {} to conform to the app classpath",
-                url, jar, notExactVersion, exactVersion);
-            URL modifiedUrl = new URL(url.toString()
-                .replace(notExactVersion, exactVersion));
-            log.debug("adding url {}", modifiedUrl);
-            urls.add(modifiedUrl);
-            it.remove();
-            itUrls.remove();
-          }
-        }
-      }
-    }
-
-    // Third try. If you ran your program in eclipse, eclipse put in classpath the related projects target/classes dirs
-    for (ListIterator<URL> itUrls = classPathUrls.listIterator(); itUrls.hasNext();) {
-      URL url = itUrls.next();
-      for (ListIterator<String> it = manifestJars.listIterator(); it.hasNext();) {
-        String jar = it.next();
-
-        Matcher matcher = jarWithVersionPattern.matcher(jar);
-        if (matcher.find()) {
-          String jarNameWithoutVersionAndExtension = matcher.group(1);
-          // we split the part before version of the jar name and we try to find all the words in the remaining program
-          // classpath urls
-          if (Arrays.asList(jarNameWithoutVersionAndExtension.split("-"))
-              .stream()
-              .allMatch(word -> url.getFile()
-                  .contains(word))) {
+    if (!manifestJars.isEmpty()) {
+      for (ListIterator<URL> itUrls = classPathUrls.listIterator(); itUrls.hasNext();) {
+        URL url = itUrls.next();
+        for (ListIterator<String> it = manifestJars.listIterator(); it.hasNext();) {
+          String jar = it.next();
+          if (url.getFile()
+              .contains(jar)) {
             log.debug("adding url {} matching {}", url, jar);
             urls.add(url);
             it.remove();
@@ -199,6 +155,125 @@ public class DirDependency implements Dependency {
       }
     }
 
+    // Second try. For dependency management reasons, we potentially have jars in the manifest
+    // that are not exactly on the same version as in the program classpath URLs.
+    // Initialize regex pattern
+    if (!manifestJars.isEmpty()) {
+      for (ListIterator<URL> itUrls = classPathUrls.listIterator(); itUrls.hasNext();) {
+        URL url = itUrls.next();
+        for (ListIterator<String> it = manifestJars.listIterator(); it.hasNext();) {
+          String jar = it.next();
+
+          Matcher matcher = JAR_WITH_VERSION_PATTERN.matcher(jar);
+          if (matcher.find()) {
+            String urlRegex = matcher.replaceFirst("$1-([^/]*)$3")
+                .replace("-", "\\-")
+                .replace(".", "\\.");
+            String exactVersion = matcher.replaceFirst("$2");
+            Pattern urlPattern = Pattern.compile(urlRegex);
+            Matcher urlMatcher = urlPattern.matcher(url.getFile());
+            if (urlMatcher.find()) {
+              String notExactVersion = urlMatcher.group(1);
+              log.info(
+                  "classpath url {} matches {} but version {} will be replaced by {} to conform to the app classpath",
+                  url, jar, notExactVersion, exactVersion);
+              URL modifiedUrl = new URL(url.toString()
+                  .replace(notExactVersion, exactVersion));
+              log.debug("adding url {}", modifiedUrl);
+              urls.add(modifiedUrl);
+              it.remove();
+              itUrls.remove();
+            }
+          }
+        }
+      }
+    }
+
+    // Third try. If you ran your program in eclipse, eclipse put in classpath the related projects target/classes dirs
+    if (!manifestJars.isEmpty()) {
+      for (ListIterator<URL> itUrls = classPathUrls.listIterator(); itUrls.hasNext();) {
+        URL url = itUrls.next();
+        for (ListIterator<String> it = manifestJars.listIterator(); it.hasNext();) {
+          String jar = it.next();
+
+          Matcher matcher = JAR_WITH_VERSION_PATTERN.matcher(jar);
+          if (matcher.find()) {
+            String jarNameWithoutVersionAndExtension = matcher.group(1);
+            // we split the part before version of the jar name and we try to find all the words in the remaining
+            // program
+            // classpath urls
+            if (Arrays.asList(jarNameWithoutVersionAndExtension.split("-"))
+                .stream()
+                .allMatch(word -> url.getFile()
+                    .contains(word))) {
+              log.debug("adding url {} matching {}", url, jar);
+              urls.add(url);
+              it.remove();
+              itUrls.remove();
+            }
+          }
+        }
+      }
+    }
+
+    // Fourth try, find the jar in the maven local repository
+    if (!manifestJars.isEmpty()) {
+
+      // retrieve maven local repository path
+      String mvnRepoPath = getMavenRepository();
+
+      List<String> jarsToRemove = Collections.synchronizedList(new ArrayList<>());
+      synchronized (manifestJars) {
+        manifestJars.parallelStream()
+            .forEach(jar -> {
+              Optional<Path> optMvnJarPath = Optional.empty();
+              try (Stream<Path> walk = Files.walk(Paths.get(mvnRepoPath))) {
+                optMvnJarPath = walk.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName()
+                        .toString()
+                        .equals(jar))
+                    .findFirst();
+                if (optMvnJarPath.isPresent()) {
+                  URL url = Paths.get(optMvnJarPath.get()
+                      .toString())
+                      .toFile()
+                      .getCanonicalFile()
+                      .toURI()
+                      .toURL();
+                  log.debug("adding url {} matching {}", url, jar);
+                  urls.add(url);
+                  jarsToRemove.add(jar);
+                }
+              } catch (IOException e) {
+                throw new UncheckedIOException(e);
+              }
+            });
+        manifestJars.removeAll(jarsToRemove);
+      }
+    }
     return urls.toArray(new URL[0]);
   }
+
+
+  private String getMavenRepository() throws IOException, InterruptedException {
+    List<String> command = new ArrayList<>();
+    if (System.getProperty("os.name")
+        .toLowerCase()
+        .startsWith("windows")) {
+      command.addAll(Arrays.asList("cmd.exe", "/c"));
+    } else {
+      command.addAll(Arrays.asList("sh", "-c"));
+    }
+    command
+        .addAll(Arrays.asList("mvn", "help:evaluate", "-Dexpression=settings.localRepository", "-q", "-DforceStdout"));
+
+    ProcessBuilder pb = new ProcessBuilder(command);
+    Process p = pb.start();
+    if (p.waitFor(30, TimeUnit.SECONDS) && p.exitValue() == 0) {
+      return IOUtils.toString(p.getInputStream(), Charset.defaultCharset())
+          .trim();
+    }
+    throw new IOException("Unable to find maven local repository path. Is maven installed in your system ?");
+  }
+
 }
