@@ -37,7 +37,7 @@ public class SpringBootIsolatedLauncher {
         try {
           // Spring-boot v1
           runMethod = springApplicationClass.getDeclaredMethod("run", Object.class, String[].class);
-        } catch (NoSuchMethodError e) {
+        } catch (NoSuchMethodError | NoSuchMethodException e) {
           // Spring-boot v2
           runMethod = springApplicationClass.getDeclaredMethod("run", Class.class, String[].class);
         }

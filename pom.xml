@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.bderancourt</groupId>
   <artifactId>spring-boot-isolated-runner</artifactId>
-  <version>0.0.9-SNAPSHOT</version>
+  <version>0.0.9</version>
 
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Run multiple spring-boot applications each in its own class loader and thread</description>
@@ -103,6 +103,13 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
       <version>5.5.2</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
